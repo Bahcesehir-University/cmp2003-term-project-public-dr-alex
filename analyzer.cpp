@@ -16,7 +16,7 @@ void trim(string &s) {
     while (end > start && isspace(static_cast<unsigned char>(s[end - 1]))) {
         end--;
     }
-    
+
      if (start == 0 && end == s.size()) {
         return;
     }
@@ -25,41 +25,37 @@ void trim(string &s) {
 }
 
 void TripAnalyzer::ingestFile(const std::string& csvPath) {
+
 // TODO:
-//  open file
-//  skip header
-//  skip malformed rows
-//  extract PickupZoneID and pickup hour
-//  aggregate counts
-    
+// - open file
+// - skip header
+// - skip malformed rows
+// - extract PickupZoneID and pickup hour
+// - aggregate counts
+
     zoneCounts.clear();
     slotCounts.clear();
 
-    zoneCounts.reserve(50000); // we reserve to prevent rehashing(changing memory).
-    slotCounts.reserve(50000);
-
+    ifstream fileOpener(csvPath);
+    if(!fileOpener.is_open()) {return; } // if the file is not opening return.
     string line;
 
-// fileOpener : is a object in ifstream that contains current read position.
-    
 
-    while (getline(cin, line)) {
+    // fileOpener : is a object in ifstream that contains current read position.
+    if(!getline(fileOpener, line)) {return; } // if its empty return.
 
-        if (line.empty()) continue;
+    while(getline(fileOpener, line)){ // getline:read a line from file. We use while to do "getline" for each line in file.
 
         string tripID;
         string pickupZone;
         string dropoffZone;
-        string pickupDateTime;
+        string pickupDateTime; 
         string distanceTaken;
-        string rideFee;
-
-        // the code below is for a replacment and faster version of stringstream. 
-        //why is it faster? because stringstream creates a new string buffer every time it search a line that slows the system.
-
+        string rideFee; // to give a place to stay for divided lines.
+        
         size_t startPos = 0; // Start index position for reading operation.
         size_t encountedCommaPos; // First encounter of ',' index after reading starting from startPos.
-        
+
         //TripID
         encountedCommaPos = line.find(',', startPos); // start from startPos and find the first ',' that encounters and asaign the index of first comma to encountedCommaPos.
         if (encountedCommaPos == string::npos) {continue;} // if it cant find ',' its dirty data.
@@ -71,7 +67,8 @@ void TripAnalyzer::ingestFile(const std::string& csvPath) {
         if (encountedCommaPos == string::npos) {continue;} 
         pickupZone = line.substr(startPos, encountedCommaPos - startPos); 
         startPos = encountedCommaPos + 1; 
-        
+
+        pickupDateTime = line.substr(startPos); // we take everything after last comma because its the last part in a line.
         size_t comma3 = line.find(',', startPos); // create a new size_t to store the postion for solving the confilct with github and hackerrank ( 3 coloumns and 6 columns confilict).
 
         if (comma3 == string::npos) {
@@ -101,11 +98,12 @@ void TripAnalyzer::ingestFile(const std::string& csvPath) {
 
         trim(tripID);
         trim(pickupZone);
-        trim(pickupDateTime); // delete the extra spaces we dont need.
-        
-        if (tripID.empty()) continue;
-        if (pickupZone.empty()) continue;
-        if (pickupDateTime.empty()) continue;
+        trim(pickupDateTime); // get rid of spaces.
+
+        if (tripID.empty())          continue;
+        if (pickupZone.empty())      continue;
+        if (pickupDateTime.empty())  continue; // even if we do the !getline to prevent empty parts, getline still can take " " in a variable. We check the variables if its empty or not.
+
 
         size_t colonIndex = pickupDateTime.find(':'); // we find the ':' to seperate hours from pickupDateTime
         if (colonIndex == string::npos || colonIndex < 2) continue; // to find dirty data and skip it.
@@ -124,20 +122,21 @@ void TripAnalyzer::ingestFile(const std::string& csvPath) {
         int seperatedHourInt = stoi(seperatedHourString);
         if (seperatedHourInt < 0 || seperatedHourInt > 23) continue;
 
-        //counts
-        zoneCounts[pickupZone]++;
+    // AGGREGAETE COUNTS
+    zoneCounts[pickupZone]++; // go to the next line and save the information of that line.
 
-        string combinedZoneAndHour =
-            pickupZone + "@" + to_string(seperatedHourInt);
+    string combinedZoneAndHour = pickupZone + "@" + to_string(seperatedHourInt); // we are changing integer again to string because when we changed the string hour to integer, we validated it.
 
-        slotCounts[combinedZoneAndHour]++;
+    slotCounts[combinedZoneAndHour]++; //  go to the next line and save the information of that line.
     }
+
+
 }
 
     vector<ZoneCount> TripAnalyzer::topZones(int k) const {
     // TODO:
-    //  sort by count desc, zone asc
-    //  return first k
+    // - sort by count desc, zone asc
+    // - return first k
 
     vector<ZoneCount> result;
     for (const auto& pair : zoneCounts) {
@@ -161,8 +160,8 @@ void TripAnalyzer::ingestFile(const std::string& csvPath) {
 vector<SlotCount> TripAnalyzer::topBusySlots(int k) const {
 
 // TODO:
-//  sort by count desc, zone asc, hour asc
-//  return first k
+// - sort by count desc, zone asc, hour asc
+// - return first k
 
     vector<SlotCount> results;
 
