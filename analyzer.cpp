@@ -36,16 +36,20 @@ void TripAnalyzer::ingestFile(const std::string& csvPath) {
     zoneCounts.clear();
     slotCounts.clear();
 
+    zoneCounts.reserve(50000); // we reserve to prevent rehashing(changing memory).
+    slotCounts.reserve(50000);
+
     ifstream fileOpener(csvPath);
     if(!fileOpener.is_open()) {return; } // if the file is not opening return.
     string line;
-
 
     // fileOpener : is a object in ifstream that contains current read position.
     if(!getline(fileOpener, line)) {return; } // if its empty return.
 
     while(getline(fileOpener, line)){ // getline:read a line from file. We use while to do "getline" for each line in file.
 
+        if (line.empty()) continue;
+        
         string tripID;
         string pickupZone;
         string dropoffZone;
@@ -68,7 +72,6 @@ void TripAnalyzer::ingestFile(const std::string& csvPath) {
         pickupZone = line.substr(startPos, encountedCommaPos - startPos); 
         startPos = encountedCommaPos + 1; 
 
-        pickupDateTime = line.substr(startPos); // we take everything after last comma because its the last part in a line.
         size_t comma3 = line.find(',', startPos); // create a new size_t to store the postion for solving the confilct with github and hackerrank ( 3 coloumns and 6 columns confilict).
 
         if (comma3 == string::npos) {
@@ -208,3 +211,4 @@ sort(results.begin(), results.end(), [](const SlotCount& a, const SlotCount& b) 
 
     return results;
 }
+
