@@ -25,34 +25,38 @@ void trim(string &s) {
 }
 
 void TripAnalyzer::ingestFile(const std::string& csvPath) {
-
 // TODO:
-// - open file
-// - skip header
-// - skip malformed rows
-// - extract PickupZoneID and pickup hour
-// - aggregate counts
-
+//  open file
+//  skip header
+//  skip malformed rows
+//  extract PickupZoneID and pickup hour
+//  aggregate counts
+    
     zoneCounts.clear();
     slotCounts.clear();
 
-    ifstream fileOpener(csvPath);
-    if(!fileOpener.is_open()) {return; } // if the file is not opening return.
+    zoneCounts.reserve(50000); // we reserve to prevent rehashing(changing memory).
+    slotCounts.reserve(50000);
+
     string line;
 
+// fileOpener : is a object in ifstream that contains current read position.
+    
 
-    // fileOpener : is a object in ifstream that contains current read position.
-    if(!getline(fileOpener, line)) {return; } // if its empty return.
+    while (getline(cin, line)) {
 
-    while(getline(fileOpener, line)){ // getline:read a line from file. We use while to do "getline" for each line in file.
+        if (line.empty()) continue;
 
         string tripID;
         string pickupZone;
         string dropoffZone;
-        string pickupDateTime; 
+        string pickupDateTime;
         string distanceTaken;
-        string rideFee; // to give a place to stay for divided lines.
-        
+        string rideFee;
+
+        // the code below is for a replacment and faster version of stringstream. 
+        //why is it faster? because stringstream creates a new string buffer every time it search a line that slows the system.
+
         size_t startPos = 0; // Start index position for reading operation.
         size_t encountedCommaPos; // First encounter of ',' index after reading starting from startPos.
         
@@ -94,15 +98,14 @@ void TripAnalyzer::ingestFile(const std::string& csvPath) {
                 rideFee = line.substr(comma5 + 1);
             }
         }
-        
+
         trim(tripID);
         trim(pickupZone);
-        trim(pickupDateTime); // get rid of spaces.
-
-        if (tripID.empty())          continue;
-        if (pickupZone.empty())      continue;
-        if (pickupDateTime.empty())  continue; // even if we do the !getline to prevent empty parts, getline still can take " " in a variable. We check the variables if its empty or not.
-
+        trim(pickupDateTime); // delete the extra spaces we dont need.
+        
+        if (tripID.empty()) continue;
+        if (pickupZone.empty()) continue;
+        if (pickupDateTime.empty()) continue;
 
         size_t colonIndex = pickupDateTime.find(':'); // we find the ':' to seperate hours from pickupDateTime
         if (colonIndex == string::npos || colonIndex < 2) continue; // to find dirty data and skip it.
@@ -121,21 +124,20 @@ void TripAnalyzer::ingestFile(const std::string& csvPath) {
         int seperatedHourInt = stoi(seperatedHourString);
         if (seperatedHourInt < 0 || seperatedHourInt > 23) continue;
 
-    // AGGREGAETE COUNTS
-    zoneCounts[pickupZone]++; // go to the next line and save the information of that line.
+        //counts
+        zoneCounts[pickupZone]++;
 
-    string combinedZoneAndHour = pickupZone + "@" + to_string(seperatedHourInt); // we are changing integer again to string because when we changed the string hour to integer, we validated it.
+        string combinedZoneAndHour =
+            pickupZone + "@" + to_string(seperatedHourInt);
 
-    slotCounts[combinedZoneAndHour]++; //  go to the next line and save the information of that line.
+        slotCounts[combinedZoneAndHour]++;
     }
-
-
 }
 
     vector<ZoneCount> TripAnalyzer::topZones(int k) const {
     // TODO:
-    // - sort by count desc, zone asc
-    // - return first k
+    //  sort by count desc, zone asc
+    //  return first k
 
     vector<ZoneCount> result;
     for (const auto& pair : zoneCounts) {
@@ -159,8 +161,8 @@ void TripAnalyzer::ingestFile(const std::string& csvPath) {
 vector<SlotCount> TripAnalyzer::topBusySlots(int k) const {
 
 // TODO:
-// - sort by count desc, zone asc, hour asc
-// - return first k
+//  sort by count desc, zone asc, hour asc
+//  return first k
 
     vector<SlotCount> results;
 
@@ -207,4 +209,3 @@ sort(results.begin(), results.end(), [](const SlotCount& a, const SlotCount& b) 
 
     return results;
 }
-
