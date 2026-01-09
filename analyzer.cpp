@@ -48,8 +48,11 @@ void TripAnalyzer::ingestFile(const std::string& csvPath) {
 
         string tripID;
         string pickupZone;
-        string pickupDateTime; // to give a place to stay for divided lines.
-
+        string dropoffZone;
+        string pickupDateTime; 
+        string distanceTaken;
+        string rideFee; // to give a place to stay for divided lines.
+        
         size_t startPos = 0; // Start index position for reading operation.
         size_t encountedCommaPos; // First encounter of ',' index after reading starting from startPos.
         
@@ -65,7 +68,32 @@ void TripAnalyzer::ingestFile(const std::string& csvPath) {
         pickupZone = line.substr(startPos, encountedCommaPos - startPos); 
         startPos = encountedCommaPos + 1; 
         
-        pickupDateTime = line.substr(startPos); // we take everything after last comma because its the last part in a line.
+        size_t comma3 = line.find(',', startPos); // create a new size_t to store the postion for solving the confilct with github and hackerrank ( 3 coloumns and 6 columns confilict).
+
+        if (comma3 == string::npos) {
+            pickupDateTime = line.substr(startPos); // if there is no comma after then its 3 coloumn format. so its pickupDateTime.
+        } else {
+            size_t comma4 = line.find(',', comma3 + 1); // we check for another.
+
+            if (comma4 == string::npos) {
+                pickupDateTime = line.substr(startPos);// if there is no comma after then its pickupDateTime.
+            } else { // after this point ,we are sure its 6 coloumn format so we move on with the same operation for parsing.
+
+                //dropoffZone
+                dropoffZone = line.substr(startPos, comma3 - startPos);
+
+                // pickupDateTime
+                pickupDateTime = line.substr(comma3 + 1, comma4 - (comma3 + 1));
+
+                // distanceTaken 
+                size_t comma5 = line.find(',', comma4 + 1);
+                if (comma5 == string::npos) continue;
+                distanceTaken = line.substr(comma4 + 1, comma5 - (comma4 + 1));
+
+                // rideFee 
+                rideFee = line.substr(comma5 + 1);
+            }
+        }
         
         trim(tripID);
         trim(pickupZone);
